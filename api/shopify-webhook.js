@@ -6,7 +6,7 @@ export default function handler(req, res) {
     }
     const data = req.body;
     console.log("Shopify webhook data:", data);
-    // TODO: Add WhatsApp integration here
+
     res.status(200).json({ message: "Webhook received" });
   }
   
