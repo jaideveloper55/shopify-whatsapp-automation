@@ -1,49 +1,83 @@
-// /api/shopify-webhook.js
+const WATI_TOKEN = process.env.WATI_TOKEN;
+const WATI_API_BASE =
+  "https://live-mt-server.wati.io/465333/api/v1/sendTemplateMessage";
+
+async function sendWatiMessage(phone, templateName, templateData) {
+  const url = `${WATI_API_BASE}?whatsappNumber=${phone}&template_name=${templateName}&template_data=${encodeURIComponent(
+    JSON.stringify(templateData)
+  )}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${WATI_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+  });
+  const result = await response.json();
+  console.log("WATI API response:", result);
+  return result;
+}
 
 export default async function handler(req, res) {
-  // 1. Only accept POST (Shopify sends webhooks as POST)
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // 2. Get Shopify event type from header
-  const eventType = req.headers["x-shopify-topic"]; // e.g. 'orders/create' or 'checkouts/update'
+  const eventType = req.headers["x-shopify-topic"];
   const payload = req.body;
-
-  // 3. Log payload for debug/demo
   console.log("Shopify Webhook Received:", eventType, payload);
 
-  // 4. Handle Order Confirmation Webhook
   if (eventType === "orders/create") {
     const order = payload;
     const customer = order.customer || {};
-    const phone = customer.phone || (customer.default_address && customer.default_address.phone) || "";
+    const phoneRaw =
+      customer.phone ||
+      (customer.default_address && customer.default_address.phone) ||
+      "";
+    const phone = phoneRaw.replace(/^\+/, "");
     const name = customer.first_name || "";
     const orderId = order.id || "";
     const amount = order.total_price || "";
+    const brand = "Gk Naturals";
 
-    // -- Demo log (replace with WhatsApp API call)
-    console.log(`Order Confirmation: Send WhatsApp to ${phone} for order ${orderId} by ${name}, amount: ${amount}`);
-    // TODO: Call WhatsApp API here
-
-    return res.status(200).json({ message: "Order confirmation webhook processed" });
+    try {
+      await sendWatiMessage(phone, "order_confirmation_v2", [
+        name,
+        orderId,
+        amount,
+        brand,
+      ]);
+      console.log(
+        `Order Confirmation: Sent WhatsApp to ${phone} for order ${orderId} by ${name}`
+      );
+    } catch (err) {
+      console.error("Failed to send WhatsApp:", err);
+    }
+    return res
+      .status(200)
+      .json({ message: "Order confirmation webhook processed" });
   }
 
-  // 5. Handle Abandoned Cart Webhook
   if (eventType === "checkouts/update") {
     const checkout = payload;
     const email = checkout.email || "";
-    const phone = checkout.phone || "";
-    const name = checkout.customer && checkout.customer.first_name;
-    const cartToken = checkout.token || "";
+    const phoneRaw = checkout.phone || "";
+    const phone = phoneRaw.replace(/^\+/, "");
+    const name = (checkout.customer && checkout.customer.first_name) || "";
+    const brand = "Gk Naturals";
 
-    // -- Demo log (replace with WhatsApp API call)
-    console.log(`Abandoned Cart: Send WhatsApp to ${phone || email} for cart ${cartToken} by ${name}`);
-    // TODO: Call WhatsApp API here
-
-    return res.status(200).json({ message: "Abandoned cart webhook processed" });
+    try {
+      await sendWatiMessage(phone, "abandoned_cart_v2", [name, brand]);
+      console.log(
+        `Abandoned Cart: Sent WhatsApp to ${phone || email} by ${name}`
+      );
+    } catch (err) {
+      console.error("Failed to send WhatsApp:", err);
+    }
+    return res
+      .status(200)
+      .json({ message: "Abandoned cart webhook processed" });
   }
 
-  // 6. Unknown webhook type
   return res.status(200).json({ message: "Webhook received, event ignored." });
 }
