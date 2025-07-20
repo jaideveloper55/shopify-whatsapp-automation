@@ -18,17 +18,18 @@ async function sendWatiMessage(phone, templateName, templateData) {
 }
 
 export default async function handler(req, res) {
-  const watiResult = await sendWatiMessage(
-    "917448748233", // <- hardcoded phon
-    "order_confirmation_v2",
-    [
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-      "jai",
-      "123456",
-      "32.70",
-      "Gk Naturals"
-    ]
-  );
-  console.log("WATI API response:", watiResult);
-  return res.status(200).json({ message: "Test WhatsApp sent", watiResult });
-}
+    const watiResult = await sendWatiMessage(
+      "917448748233",
+      "order_confirmation_v2",
+      [
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+        "jai",
+        "123456",
+        "32.70",
+        "Gk Naturals"
+      ]
+    );
+    console.log("WATI API response:", watiResult);
+    return res.status(200).json({ message: "Test WhatsApp sent", watiResult });
+  }
+  
