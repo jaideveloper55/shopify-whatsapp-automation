@@ -1,7 +1,6 @@
 const WATI_TOKEN = process.env.WATI_TOKEN;
 const WATI_API_BASE = "https://live-mt-server.wati.io/465333/api/v1/sendTemplateMessage";
 
-// Helper to send WhatsApp template message via WATI
 async function sendWatiMessage(phone, templateName, templateData) {
   const url = `${WATI_API_BASE}?whatsappNumber=${phone}&template_name=${templateName}&template_data=${encodeURIComponent(
     JSON.stringify(templateData)
@@ -19,24 +18,17 @@ async function sendWatiMessage(phone, templateName, templateData) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  // ---- TEST MESSAGE SECTION ----
-  // REMOVE this after testing!
   const watiResult = await sendWatiMessage(
-    "917448748233", // India country code, without +
+    "917448748233", // Make sure this is YOUR WhatsApp, no +
     "order_confirmation_v2",
     [
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb", // dummy image url or ""
-      "jai",      // name
-      "123456",   // order id
-      "32.70",    // amount
-      "Gk Naturals" // brand
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+      "jai",
+      "123456",
+      "32.70",
+      "Gk Naturals"
     ]
   );
-  console.log("Order Confirmation WhatsApp result (test):", watiResult);
-
+  console.log("WATI API response:", watiResult);
   return res.status(200).json({ message: "Test WhatsApp sent", watiResult });
 }
