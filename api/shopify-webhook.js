@@ -2,9 +2,7 @@ const WATI_TOKEN = process.env.WATI_TOKEN;
 const WATI_API_BASE = "https://live-mt-server.wati.io/465333/api/v1/sendTemplateMessage";
 
 async function sendWatiMessage(phone, templateName, templateData) {
-  const url = `${WATI_API_BASE}?whatsappNumber=${phone}&template_name=${templateName}&template_data=${encodeURIComponent(
-    JSON.stringify(templateData)
-  )}`;
+  const url = `${WATI_API_BASE}?whatsappNumber=${phone}&template_name=${templateName}&template_data=${encodeURIComponent(JSON.stringify(templateData))}`;
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -45,9 +43,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ message: "No phone number. WhatsApp not sent." });
   }
 
-  console.log(
-    `Order Confirmation: Send WhatsApp to ${phone} for order ${orderId} by ${name}, amount: ${amount}`
-  );
+  console.log(`Order Confirmation: Send WhatsApp to ${phone} for order ${orderId} by ${name}, amount: ${amount}`);
 
   const watiResult = await sendWatiMessage(
     phone,
@@ -57,6 +53,7 @@ export default async function handler(req, res) {
 
   if (!watiResult.success) {
     console.error("WATI error:", watiResult);
+    return res.status(500).json({ error: "Failed to send WhatsApp message", watiResult });
   }
 
   return res.status(200).json({ message: "Order confirmation webhook processed", watiResult });
