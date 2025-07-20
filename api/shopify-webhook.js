@@ -19,7 +19,7 @@ async function sendWatiMessage(phone, templateName, templateData) {
 
 export default async function handler(req, res) {
   const watiResult = await sendWatiMessage(
-    "917448748233", // Make sure this is YOUR WhatsApp, no +
+    "917448748233", // <- hardcoded phone
     "order_confirmation_v2",
     [
       "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
