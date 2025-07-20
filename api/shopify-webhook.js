@@ -1,6 +1,5 @@
 const WATI_TOKEN = process.env.WATI_TOKEN;
-const WATI_API_BASE =
-  "https://live-mt-server.wati.io/465333/api/v1/sendTemplateMessage";
+const WATI_API_BASE = "https://live-mt-server.wati.io/465333/api/v1/sendTemplateMessage";
 
 // Helper to send WhatsApp template message via WATI
 async function sendWatiMessage(phone, templateName, templateData) {
