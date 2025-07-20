@@ -27,56 +27,54 @@ export default async function handler(req, res) {
   const payload = req.body;
   console.log("Shopify Webhook Received:", eventType, payload);
 
-  if (eventType === "orders/create") {
-    const order = payload;
-    const customer = order.customer || {};
-    const phoneRaw =
-      customer.phone ||
-      (customer.default_address && customer.default_address.phone) ||
-      "";
-    const phone = phoneRaw.replace(/^\+/, "");
-    const name = customer.first_name || "";
-    const orderId = order.id || "";
-    const amount = order.total_price || "";
-    const brand = "Gk Naturals";
+  try {
+    if (eventType === "orders/create") {
+      const order = payload;
+      const customer = order.customer || {};
+      const phoneRaw =
+        customer.phone ||
+        (customer.default_address && customer.default_address.phone) ||
+        "";
+      const phone = phoneRaw.replace(/^\+/, "");
+      const name = customer.first_name || "";
+      const orderId = order.id || "";
+      const amount = order.total_price || "";
+      const brand = "Gk Naturals";
 
-    try {
-      await sendWatiMessage(phone, "order_confirmation_v2", [
+      const watiResult = await sendWatiMessage(phone, "order_confirmation_v2", [
         name,
         orderId,
         amount,
         brand,
       ]);
-      console.log(
-        `Order Confirmation: Sent WhatsApp to ${phone} for order ${orderId} by ${name}`
-      );
-    } catch (err) {
-      console.error("Failed to send WhatsApp:", err);
-    }
-    return res
-      .status(200)
-      .json({ message: "Order confirmation webhook processed" });
-  }
+      console.log("Order Confirmation WhatsApp result:", watiResult);
 
-  if (eventType === "checkouts/update") {
-    const checkout = payload;
-    const email = checkout.email || "";
-    const phoneRaw = checkout.phone || "";
-    const phone = phoneRaw.replace(/^\+/, "");
-    const name = (checkout.customer && checkout.customer.first_name) || "";
-    const brand = "Gk Naturals";
-
-    try {
-      await sendWatiMessage(phone, "abandoned_cart_v2", [name, brand]);
-      console.log(
-        `Abandoned Cart: Sent WhatsApp to ${phone || email} by ${name}`
-      );
-    } catch (err) {
-      console.error("Failed to send WhatsApp:", err);
+      return res
+        .status(200)
+        .json({ message: "Order confirmation webhook processed" });
     }
-    return res
-      .status(200)
-      .json({ message: "Abandoned cart webhook processed" });
+
+    if (eventType === "checkouts/update") {
+      const checkout = payload;
+      const email = checkout.email || "";
+      const phoneRaw = checkout.phone || "";
+      const phone = phoneRaw.replace(/^\+/, "");
+      const name = (checkout.customer && checkout.customer.first_name) || "";
+      const brand = "Gk Naturals";
+
+      const watiResult = await sendWatiMessage(phone, "abandoned_cart_v2", [
+        name,
+        brand,
+      ]);
+      console.log("Abandoned Cart WhatsApp result:", watiResult);
+
+      return res
+        .status(200)
+        .json({ message: "Abandoned cart webhook processed" });
+    }
+  } catch (err) {
+    console.error("Failed to send WhatsApp:", err);
+    return res.status(500).json({ error: "Failed to send WhatsApp message" });
   }
 
   return res.status(200).json({ message: "Webhook received, event ignored." });
