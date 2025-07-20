@@ -2,17 +2,25 @@ const WATI_TOKEN = process.env.WATI_TOKEN;
 const WATI_API_BASE = "https://live-mt-server.wati.io/465333/api/v1/sendTemplateMessage";
 
 async function sendWatiMessage(phone, templateName, templateData) {
-  const url = `${WATI_API_BASE}?whatsappNumber=${phone}&template_name=${templateName}&template_data=${encodeURIComponent(JSON.stringify(templateData))}`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${WATI_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-  });
-  const result = await response.json();
-  console.log("WATI API response:", result);
-  return result;
+  const url = `${WATI_API_BASE}?whatsappNumber=${phone}&template_name=${templateName}&template_data=${encodeURIComponent(
+    JSON.stringify(templateData)
+  )}`;
+  console.log("WATI API REQUEST:", url);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${WATI_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+    const result = await response.json();
+    console.log("WATI API response:", result);
+    return result;
+  } catch (err) {
+    console.error("WATI fetch error:", err);
+    return { success: false, error: err.message || err };
+  }
 }
 
 export default async function handler(req, res) {
@@ -39,11 +47,13 @@ export default async function handler(req, res) {
   }
 
   if (!phone) {
-    console.warn("No phone number found in payload. WhatsApp message not sent.");
-    return res.status(200).json({ message: "No phone number. WhatsApp not sent." });
+    console.error("No phone number found in payload. WhatsApp message not sent.");
+    return res.status(400).json({ message: "No phone number. WhatsApp not sent." });
   }
 
-  console.log(`Order Confirmation: Send WhatsApp to ${phone} for order ${orderId} by ${name}, amount: ${amount}`);
+  console.log(
+    `Order Confirmation: Send WhatsApp to ${phone} for order ${orderId} by ${name}, amount: ${amount}`
+  );
 
   const watiResult = await sendWatiMessage(
     phone,
@@ -51,7 +61,13 @@ export default async function handler(req, res) {
     [productImageUrl, name, orderId, amount, brand]
   );
 
-  if (!watiResult.success) {
+  // Some WATI API responses use `status: "success"` instead of success: true
+  const isSuccess =
+    watiResult.success === true ||
+    watiResult.status === "success" ||
+    (!watiResult.error && !watiResult.errors);
+
+  if (!isSuccess) {
     console.error("WATI error:", watiResult);
     return res.status(500).json({ error: "Failed to send WhatsApp message", watiResult });
   }
